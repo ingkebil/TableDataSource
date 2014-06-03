@@ -11,53 +11,26 @@ namespace TableDataSource
         public T dt { get; set; }
 
         #region constructors
-        public TableDataSource(UserControl parent, CompositeDataBoundControl boundcontrol)
-            : base(typeof(TableDataSource<T>).GetType().AssemblyQualifiedName, "GetTable")
+        public TableDataSource(Control parent, CompositeDataBoundControl boundcontrol)
+            : base(typeof(TableDataSource.DataTable).FullName, "GetTable")
         {
-            TypeName = this.GetType().AssemblyQualifiedName;
+            //TypeName = this.GetType().AssemblyQualifiedName;
             this.ID = String.Concat(parent.ID, "SortableDataTable1");
             parent.Controls.Add(this);
             boundcontrol.DataSourceID = this.ID;
-            parent.Page.RegisterRequiresControlState(this);
         }
 
-        public TableDataSource(UserControl parent, CompositeDataBoundControl boundcontrol, T dt)
+        public TableDataSource(Control parent, CompositeDataBoundControl boundcontrol, T dt)
             : this(parent, boundcontrol)
         {
             this.dt = dt;
         }
-
-        public TableDataSource()
-            : base(typeof(TableDataSource<T>).GetType().AssemblyQualifiedName, "GetTable")
-        {
-            TypeName = this.GetType().AssemblyQualifiedName;
-            if (dt == null)
-            {
-                dt = new DataTable() as T;
-            }
-        }
         #endregion constructors
-
-        // adds the datatable to the objectdatasource
-        void ods_Selecting(object sender, ObjectDataSourceSelectingEventArgs e)
-        {
-            e.InputParameters.Add("dt", dt);
-        }
-
-        void ods_Selected(object sender, ObjectDataSourceStatusEventArgs e)
-        {
-            // maybe handle the exceptions here ...
-        }
 
         protected override void OnInit(EventArgs e)
         {
             base.OnInit(e);
             Page.RegisterRequiresControlState(this);
-        }
-
-        protected override void OnLoad(EventArgs e)
-        {
-            base.OnLoad(e);
             this.Selecting += ods_Selecting;
             this.Selected += ods_Selected;
         }
@@ -67,6 +40,22 @@ namespace TableDataSource
             this.Selecting -= ods_Selecting;
             this.Selected -= ods_Selected;
             base.OnUnload(e);
+        }
+
+        // adds the datatable to the objectdatasource
+        void ods_Selecting(object sender, ObjectDataSourceSelectingEventArgs e)
+        {
+            e.InputParameters.Add("dt", dt);
+        }
+
+        void ods_Selected(object sender, ObjectDataSourceStatusEventArgs e)
+        {
+            if (e.Exception != null)
+            {
+                GeneralErrorForm.Log(this, e.Exception);
+                //Set the exception handled property so it doesn't bubble-up
+                e.ExceptionHandled = true;
+            }
         }
 
         #region control state
@@ -82,15 +71,5 @@ namespace TableDataSource
             this.dt = objectarray[1] as T;
         }
         #endregion control state
-
-        public T GetTable(DataTable dt)
-        {
-            return dt as T;
-        }
-
-        public T GetTable()
-        {
-            return dt;
-        }
     }
 }
